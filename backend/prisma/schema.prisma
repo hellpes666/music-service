@@ -1,0 +1,144 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("POSTRGES_URI")
+}
+
+//TODO: MFA isVerified authMethod e.t.c
+model User {
+  id String @id @default(uuid())
+
+  firstName String   @map("first_name")
+  lastName  String   @map("last_name")
+  email     String   @unique
+  password  String
+  role      UserRole @default(USER)
+
+  sex             Gender?
+  birthDate       DateTime? @map("birth_date")
+  phoneNumber     String?   @unique
+  appealToTheUser String?   @map("appeal_to_the_user")
+  avatarUrl       String?   @map("avatar_url")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt() @map("updated_at")
+
+  Artist         Artist?
+  favoriteTracks FavoriteTrack[] @relation("UserFavoriteTracks")
+
+  @@map("users")
+}
+
+model Artist {
+  id String @id @default(uuid())
+
+  name             String  @unique
+  verified         Boolean @default(false)
+  likes            Int     @default(0)
+  monthlyListeners Int     @default(0) @map("monthly_listeners")
+
+  bio      String?
+  coverUrl String? @map("cover_url")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt() @map("updated_at")
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String @unique
+
+  tracks Track[] @relation("ArtistTracks")
+  albums Album[] @relation("ArtistAlbums")
+
+  @@map("artists")
+}
+
+model Album {
+  id String @id @default(uuid())
+
+  name        String
+  releaseYear Int
+  likes       Int    @default(0)
+
+  description String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt() @map("updated_at")
+
+  tracks Track[] @relation("AlbumTracks")
+
+  artist   Artist @relation("ArtistAlbums", fields: [artistId], references: [id])
+  artistId String @map("artist_id")
+
+  @@map("albums")
+}
+
+model Track {
+  id String @id @default(uuid())
+
+  title       String
+  yearRelease Int
+  likes       Int    @default(0)
+  audioUrl    String
+
+  text          String?
+  albumPosition Int?    @map("album_position")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt() @map("updated_at")
+
+  artists Artist[] @relation("ArtistTracks")
+
+  album   Album?  @relation("AlbumTracks", fields: [albumId], references: [id])
+  albumId String? @map("album_id")
+
+  genres Genre[] @relation("TrackGenres")
+
+  favoriteTrack FavoriteTrack[] @relation("FavoriteTrack")
+
+  @@map("tracks")
+}
+
+model Genre {
+  id String @id @default(uuid())
+
+  name String @unique
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt() @map("updated_at")
+
+  tracks Track[] @relation("TrackGenres")
+
+  @@map("genres")
+}
+
+model FavoriteTrack {
+  id String @id @default(uuid())
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt() @map("updated_at")
+
+  user   User   @relation("UserFavoriteTracks", fields: [userId], references: [id])
+  userId String
+
+  track   Track  @relation("FavoriteTrack", fields: [trackId], references: [id])
+  trackId String
+
+  @@unique([userId, trackId])
+  @@map("favorite_tracks")
+}
+
+//TODO: add playlist + playlist track 
+
+enum UserRole {
+  ADMIN
+  USER
+  ARTIST
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
