@@ -26,7 +26,7 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt() @map("updated_at")
 
-  Artist         Artist?
+  artist         Artist?
   favoriteTracks FavoriteTrack[] @relation("UserFavoriteTracks")
 
   @@map("users")
